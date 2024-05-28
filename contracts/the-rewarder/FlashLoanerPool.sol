@@ -31,6 +31,7 @@ contract FlashLoanerPool is ReentrancyGuard {
             revert NotEnoughTokenBalance();
         }
 
+        // audit-issue can be bypassed by being called in constructor
         if (!msg.sender.isContract()) {
             revert CallerIsNotContract();
         }
