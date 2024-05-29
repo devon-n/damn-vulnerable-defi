@@ -43,7 +43,7 @@ contract FreeRiderNFTMarketplace is ReentrancyGuard {
         uint256 amount = tokenIds.length;
         if (amount == 0)
             revert InvalidTokensAmount();
-            
+
         if (amount != prices.length)
             revert InvalidPricesAmount();
 
@@ -90,6 +90,7 @@ contract FreeRiderNFTMarketplace is ReentrancyGuard {
         if (priceToPay == 0)
             revert TokenNotOffered(tokenId);
 
+        // @ Checks only one NFT price: I can buy multiple tokens for only the price of the most expensive one
         if (msg.value < priceToPay)
             revert InsufficientPayment();
 
@@ -97,9 +98,12 @@ contract FreeRiderNFTMarketplace is ReentrancyGuard {
 
         // transfer from seller to buyer
         DamnValuableNFT _token = token; // cache for gas savings
+        // @audit-issue: Transfers token to buyer
+        // @audit-issue: seller can revoke approval
         _token.safeTransferFrom(_token.ownerOf(tokenId), msg.sender, tokenId);
 
         // pay seller using cached token
+        // @audit-issue: Transfers msg.value to buyer as the buyer is not the token owner
         payable(_token.ownerOf(tokenId)).sendValue(priceToPay);
 
         emit NFTBought(msg.sender, tokenId, priceToPay);
