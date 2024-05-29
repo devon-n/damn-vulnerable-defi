@@ -36,6 +36,8 @@ contract Exchange is ReentrancyGuard {
 
         // Price should be in [wei / NFT]
         uint256 price = oracle.getMedianPrice(token.symbol());
+
+        // @audit-issue should be msg.value == price. ETH may be stuck in contract
         if (msg.value < price)
             revert InvalidPayment();
 
@@ -50,7 +52,7 @@ contract Exchange is ReentrancyGuard {
     function sellOne(uint256 id) external nonReentrant {
         if (msg.sender != token.ownerOf(id))
             revert SellerNotOwner(id);
-    
+
         if (token.getApproved(id) != address(this))
             revert TransferNotApproved();
 
