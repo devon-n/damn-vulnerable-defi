@@ -144,7 +144,6 @@ describe('[Challenge] Puppet v3', function () {
         /** CODE YOUR SOLUTION HERE */
 
         // Connect to contracts as attacker
-        const attackPool = await uniswapPool.connect(player);
         const attackLendingPool = await lendingPool.connect(player);
         const attackToken = await token.connect(player);
         const attackWeth = await weth.connect(player);
